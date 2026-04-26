@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -88,7 +89,11 @@ var rootCmd = &cobra.Command{
 
 		s := spinner.New(spinner.CharSets[9], 100*time.Millisecond, spinner.WithSuffix(" Retrieving available video formats..."))
 		s.Start()
-		data, err := ytdlp.GetVideoData(url, password)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		data, err := ytdlp.GetVideoData(ctx, url, password)
 		s.Stop()
 
 		if err != nil {
@@ -140,7 +145,12 @@ var rootCmd = &cobra.Command{
 			format = fmt.Sprintf("%s+%s", vf.FormatID, af.FormatID)
 		}
 
-		ytdlp.DownloadVideo(url, password, format)
+		ytdlp.DownloadVideo(ctx, url, password, format)
+		if err != nil {
+			fmt.Println("Error downloading video:", err)
+			return
+		}
+		fmt.Println("Download complete!")
 	},
 }
 

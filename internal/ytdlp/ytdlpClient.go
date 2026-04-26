@@ -3,6 +3,7 @@ package ytdlp
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -15,10 +16,10 @@ type DownloadResult struct {
 	DefaultTemplate string `json:"_default_template"`
 }
 
-func GetVideoData(url, password string) (*VideoData, error) {
+func GetVideoData(ctx context.Context, url, password string) (*VideoData, error) {
 	cmd := NewYtDlpCommand(url, password)
 	cmd.AddArg("-J")
-	ytDlpCmd := cmd.Execute()
+	ytDlpCmd := cmd.Execute(ctx)
 
 	var out bytes.Buffer
 	var stderr bytes.Buffer
@@ -49,7 +50,7 @@ func GetVideoData(url, password string) (*VideoData, error) {
 	return &data, nil
 }
 
-func DownloadVideo(url, password, format string) error {
+func DownloadVideo(ctx context.Context, url, password, format string) error {
 	cmd := NewYtDlpCommand(url, password)
 	cfg := appconfig.Get()
 	if cfg.N > 0 {
@@ -58,7 +59,7 @@ func DownloadVideo(url, password, format string) error {
 	cmd.AddArg("--newline")
 	cmd.AddArgWithValue("-f", format)
 	cmd.AddArgWithValue("--progress-template", "%(progress)j")
-	ytDlpCmd := cmd.Execute()
+	ytDlpCmd := cmd.Execute(ctx)
 
 	cmd.ClearPassword()
 

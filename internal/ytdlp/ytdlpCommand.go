@@ -1,6 +1,7 @@
 package ytdlp
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -31,12 +32,12 @@ func (c *YtDlpCommand) AddArgWithValue(arg, value string) {
 	c.args = append(c.args, value)
 }
 
-func (c *YtDlpCommand) Execute() *exec.Cmd {
+func (c *YtDlpCommand) Execute(ctx context.Context) *exec.Cmd {
 	cfg := appconfig.Get()
 
 	fmt.Printf("yt-dlp command: %s %s\n", cfg.YtDlpCommand, strings.Join(c.buildArgs(true), " "))
 
-	return exec.Command(cfg.YtDlpCommand, c.buildArgs(false)...)
+	return exec.CommandContext(ctx, cfg.YtDlpCommand, c.buildArgs(false)...)
 }
 
 func (c *YtDlpCommand) buildArgs(hidePassword bool) []string {
