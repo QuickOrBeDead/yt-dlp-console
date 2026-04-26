@@ -15,9 +15,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "",
-	Short: "",
-	Long:  "",
+	Use:   "yt-dlp-console",
+	Short: "Interactive CLI for downloading videos using yt-dlp",
+	Long:  "An interactive command-line tool for selecting and downloading videos using yt-dlp with format selection.",
 	Run: func(cmd *cobra.Command, args []string) {
 		var url, password string
 		var af, vf *ytdlp.VideoFormat = nil, nil

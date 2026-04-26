@@ -3,6 +3,7 @@ package appconfig
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -45,6 +46,7 @@ func load() *Config {
 	}
 	var c Config
 	if err := json.Unmarshal(b, &c); err != nil {
+		log.Printf("Warning: could not parse config file: %v\n", err)
 		return cfg
 	}
 	if c.YtDlpCommand != "" {

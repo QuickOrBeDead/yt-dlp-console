@@ -57,3 +57,9 @@ func (c *YtDlpCommand) buildArgs(hidePassword bool) []string {
 
 	return args
 }
+
+func (c *YtDlpCommand) ClearPassword() {
+	if len(c.password) > 0 {
+		c.password = ""
+	}
+}

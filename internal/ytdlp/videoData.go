@@ -56,9 +56,7 @@ type VideoFormat struct {
 	Height          int     `json:"height"`
 	Language        string  `json:"language"`
 	TotalBitRate    float64 `json:"tbr,omitempty"`
-	AudioSampleRate int     `json:"asr,omitempty"`
-	AudioBitrate    int     `json:"abr,omitempty"`
-	VideoBitrate    int     `json:"vbr,omitempty"`
+	AudioSampleRate *int    `json:"asr,omitempty"`
 }
 
 func (f *VideoFormat) getSize(v *VideoData) string {
@@ -172,14 +170,14 @@ func (f *VideoFormat) getDescription(v *VideoData) string {
 
 	if f.HasVideo() {
 		fmt.Fprintf(&sb, "%s %dp", f.Ext, f.Height)
-	} else if f.HasAudio() && f.AudioSampleRate > 0 {
-		fmt.Fprintf(&sb, "%s %.1fk", f.Ext, float64(f.AudioSampleRate)/1000)
+	} else if f.HasAudio() && f.AudioSampleRate != nil {
+		fmt.Fprintf(&sb, "%s %.1fk", f.Ext, float64(*f.AudioSampleRate)/1000)
 	} else {
 		fmt.Fprintf(&sb, "%s", f.Ext)
 	}
 
 	if len(size) > 0 {
-		fmt.Fprintf(&sb, " - %s", f.getSize(v))
+		fmt.Fprintf(&sb, " - %s", size)
 	}
 
 	videoCodec := f.getVideoCodec()

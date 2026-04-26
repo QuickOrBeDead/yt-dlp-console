@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/QuickOrBeDead/yt-dlp-console/internal/appconfig"
@@ -25,13 +26,15 @@ func GetVideoData(url, password string) (*VideoData, error) {
 	ytDlpCmd.Stderr = &stderr
 	err := ytDlpCmd.Run()
 
+	cmd.ClearPassword()
+
 	if err != nil {
 		if stderr.Len() > 0 {
-			fmt.Println()
-			fmt.Println(stderr.String())
+			fmt.Fprintln(os.Stderr)
+			fmt.Fprintln(os.Stderr, stderr.String())
 		} else {
-			fmt.Println()
-			fmt.Println("Error running yt-dlp:", err)
+			fmt.Fprintln(os.Stderr)
+			fmt.Fprintln(os.Stderr, "Error running yt-dlp:", err)
 		}
 		return nil, err
 	}
@@ -39,7 +42,7 @@ func GetVideoData(url, password string) (*VideoData, error) {
 	var data VideoData
 	err = json.Unmarshal(out.Bytes(), &data)
 	if err != nil {
-		fmt.Println("Error parsing JSON:", err)
+		fmt.Fprintln(os.Stderr, "Error parsing JSON:", err)
 		return nil, err
 	}
 
@@ -57,22 +60,24 @@ func DownloadVideo(url, password, format string) error {
 	cmd.AddArgWithValue("--progress-template", "%(progress)j")
 	ytDlpCmd := cmd.Execute()
 
+	cmd.ClearPassword()
+
 	stdout, err := ytDlpCmd.StdoutPipe()
 	if err != nil {
-		fmt.Println("Error creating StdoutPipe:", err)
+		fmt.Fprintln(os.Stderr, "Error creating StdoutPipe:", err)
 		return err
 	}
 
 	stderr, err := ytDlpCmd.StderrPipe()
 	if err != nil {
-		fmt.Println("Error creating StderrPipe:", err)
+		fmt.Fprintln(os.Stderr, "Error creating StderrPipe:", err)
 		return err
 	}
 
 	err = ytDlpCmd.Start()
 
 	if err != nil {
-		fmt.Println("Error running yt-dlp:", err)
+		fmt.Fprintln(os.Stderr, "Error running yt-dlp:", err)
 		return err
 	}
 
@@ -82,7 +87,7 @@ func DownloadVideo(url, password, format string) error {
 
 	go func() {
 		for stderrScanner.Scan() {
-			fmt.Println(stderrScanner.Text())
+			fmt.Fprintln(os.Stderr, stderrScanner.Text())
 		}
 	}()
 
@@ -92,24 +97,23 @@ func DownloadVideo(url, password, format string) error {
 			var result DownloadResult
 			if err := json.Unmarshal([]byte(line), &result); err == nil {
 				downloading = true
-				fmt.Print("\033[2K\r") // Clears the entire line and moves the cursor to the beginning
-				fmt.Printf("%s", result.DefaultTemplate)
+				fmt.Fprintf(os.Stderr, "\r%s\x1b[K", result.DefaultTemplate)
 			}
 		} else {
 			if downloading {
 				downloading = false
-
-				fmt.Println()
+				fmt.Fprintln(os.Stderr)
 			}
-			fmt.Println(line)
+			fmt.Fprintln(os.Stderr, line)
 		}
 	}
 
-	// Wait for the command to finish
 	if err := ytDlpCmd.Wait(); err != nil {
-		fmt.Println("Error waiting for command:", err)
+		fmt.Fprintln(os.Stderr, "Error waiting for command:", err)
 		return err
 	}
+
+	fmt.Println()
 
 	return err
 }
