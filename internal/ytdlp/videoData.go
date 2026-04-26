@@ -50,8 +50,6 @@ type VideoFormat struct {
 	FileSizeApprox  uint64  `json:"filesize_approx,omitempty"`
 	VCodec          string  `json:"vcodec,omitempty"`
 	ACodec          string  `json:"acodec,omitempty"`
-	AudioExt        string  `json:"audio_ext,omitempty"`
-	VideoExt        string  `json:"video_ext,omitempty"`
 	Width           int     `json:"width"`
 	Height          int     `json:"height"`
 	Language        string  `json:"language"`

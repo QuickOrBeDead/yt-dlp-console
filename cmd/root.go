@@ -145,7 +145,7 @@ var rootCmd = &cobra.Command{
 			format = fmt.Sprintf("%s+%s", vf.FormatID, af.FormatID)
 		}
 
-		ytdlp.DownloadVideo(ctx, url, password, format)
+		err = ytdlp.DownloadVideo(ctx, url, password, format)
 		if err != nil {
 			fmt.Println("Error downloading video:", err)
 			return

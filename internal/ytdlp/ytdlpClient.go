@@ -83,14 +83,25 @@ func DownloadVideo(ctx context.Context, url, password, format string) error {
 	}
 
 	downloading := false
+	done := make(chan struct{})
 	stdoutScanner := bufio.NewScanner(stdout)
 	stderrScanner := bufio.NewScanner(stderr)
 
-	go func() {
-		for stderrScanner.Scan() {
-			fmt.Fprintln(os.Stderr, stderrScanner.Text())
+	go func(done chan struct{}) {
+		defer close(done)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				if stderrScanner.Scan() {
+					fmt.Fprintln(os.Stderr, stderrScanner.Text())
+				} else {
+					return
+				}
+			}
 		}
-	}()
+	}(done)
 
 	for stdoutScanner.Scan() {
 		line := stdoutScanner.Text()
@@ -113,6 +124,8 @@ func DownloadVideo(ctx context.Context, url, password, format string) error {
 		fmt.Fprintln(os.Stderr, "Error waiting for command:", err)
 		return err
 	}
+
+	<-done
 
 	fmt.Println()
 
