@@ -15,7 +15,7 @@ yt-dlp is powerful but requires remembering complex command-line options. This i
 
 ## Requirements
 
-- [Go](https://go.dev/) 1.25+
+- [Go](https://go.dev/) 1.26.2+
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) installed and in PATH
 
 ## Installation

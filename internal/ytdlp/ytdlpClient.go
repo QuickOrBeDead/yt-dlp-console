@@ -89,16 +89,12 @@ func DownloadVideo(ctx context.Context, url, password, format string) error {
 
 	go func(done chan struct{}) {
 		defer close(done)
-		for {
+		for stderrScanner.Scan() {
 			select {
 			case <-ctx.Done():
 				return
 			default:
-				if stderrScanner.Scan() {
-					fmt.Fprintln(os.Stderr, stderrScanner.Text())
-				} else {
-					return
-				}
+				fmt.Fprintln(os.Stderr, stderrScanner.Text())
 			}
 		}
 	}(done)

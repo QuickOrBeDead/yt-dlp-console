@@ -1,0 +1,42 @@
+# .goreleaser.yaml
+project_name: yt-dlp-console
+
+archives:
+  - id: default
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+
+builds:
+  - id: default
+    main: .
+    binary: yt-dlp-console
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X={{.ModuleName}}/cmd.version={{.Version}}
+
+checksum:
+  algorithm: sha256
+
+release:
+  github:
+    owner: QuickOrBeDead
+    name: yt-dlp-console
+  draft: false
+
+changelog:
+  skip: false
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^chore:'
+      - '^refactor:'
