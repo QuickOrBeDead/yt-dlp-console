@@ -38,13 +38,13 @@ changelog:
   use: github
   groups:
     - title: Features
-      regexp: '^feat:'
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
       order: 0
     - title: Bug Fixes
-      regexp: '^fix:'
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
       order: 1
     - title: Misc.
-      regexp: '^test:|^chore:|^docs:|^refactor:|^build:|^ci:|^cleanup:'
+      regexp: '^.*?(test|chore|docs|refactor|build|ci|cleanup)(\([[:word:]]+\))??!?:.+$'
       order: 2
     - title: Other
       order: 999
