@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - develop
     paths-ignore:
       - '**.md'
       - '.gitignore'
@@ -14,48 +15,37 @@ permissions:
   contents: write
 
 jobs:
-  bump:
+  tag:
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, 'skip bump')"
+    outputs:
+      new_tag: ${{ steps.version.outputs.new_tag }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Bump version
-        id: bump
+      - name: Set Release Suffix
+        id: suffix
         run: |
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          VERSION=${LAST_TAG#v}
-
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-
-          MSG="${{ github.event.head_commit.message }}"
-
-          if echo "$MSG" | grep -qiE '!$|BREAKING CHANGE'; then
-            MAJOR=$((MAJOR + 1))
-            MINOR=0
-            PATCH=0
-          elif echo "$MSG" | grep -qiE '^feat'; then
-            MINOR=$((MINOR + 1))
-            PATCH=0
-          else
-            PATCH=$((PATCH + 1))
+          if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "val=beta" >> $GITHUB_OUTPUT
           fi
 
-          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
-          echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
-          echo "version=$MAJOR.$MINOR.$PATCH" >> $GITHUB_OUTPUT
-
-      - name: Create and push tag
-        run: |
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          git tag ${{ steps.bump.outputs.tag }}
-          git push origin ${{ steps.bump.outputs.tag }}
+      - name: Bump version and push tag
+        id: version
+        uses: anothrNick/github-tag-action@1.70.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: true
+          DEFAULT_BUMP: patch
+          RELEASE_BRANCHES: main
+          PRERELEASE: ${{ github.ref != 'refs/heads/main' }}
+          PRERELEASE_SUFFIX: ${{ steps.suffix.outputs.val }}
 
   release:
-    needs: bump
+    needs: tag
+    if: ${{ needs.tag.outputs.new_tag != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -71,5 +61,15 @@ jobs:
         with:
           version: latest
           args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ needs.tag.outputs.new_tag }}
+          name: Release ${{ needs.tag.outputs.new_tag }}
+          generateReleaseNotes: true
+          prerelease: ${{ github.ref != 'refs/heads/main' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
