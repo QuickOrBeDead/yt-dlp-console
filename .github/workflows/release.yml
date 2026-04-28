@@ -58,13 +58,3 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create GitHub Release
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ needs.tag.outputs.new_tag }}
-          name: Release ${{ needs.tag.outputs.new_tag }}
-          generateReleaseNotes: true
-          prerelease: ${{ github.ref != 'refs/heads/main' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

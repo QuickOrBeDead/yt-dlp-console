@@ -31,6 +31,8 @@ release:
     owner: QuickOrBeDead
     name: yt-dlp-console
   draft: false
+  prerelease: auto
+  name_template: "Release {{.Version}}"
 
 changelog:
   skip: false
