@@ -35,10 +35,13 @@ release:
   name_template: "Release {{.Version}}"
 
 changelog:
-  skip: false
   use: github
+  groups:
+    - title: Features
+      regexp: '^feat'
+    - title: Bug Fixes
+      regexp: '^fix'
+    - title: Misc.
+      regexp: '^test:|^chore:|^docs:|^refactor:|^build:|^ci:|^cleanup:'
   filters:
-    exclude:
-      - '^docs:'
-      - '^chore:'
-      - '^refactor:'
+    exclude: []

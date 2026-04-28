@@ -51,6 +51,9 @@ jobs:
         with:
           go-version: stable
 
+      - name: Run Unit Tests
+        run: go test ./...
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
