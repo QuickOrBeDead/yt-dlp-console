@@ -85,14 +85,20 @@ func (c *YtDlpClient) DownloadVideo(ctx context.Context, url, password, format s
 			var result DownloadResult
 			if err := json.Unmarshal([]byte(line), &result); err == nil {
 				downloading = true
-				fmt.Fprintf(os.Stderr, "\r%s\x1b[K", result.DefaultTemplate)
+				fmt.Fprintf(os.Stdout, "\r%s\x1b[K", result.DefaultTemplate)
+			} else {
+				if downloading {
+					downloading = false
+					fmt.Fprintln(os.Stdout)
+				}
+				fmt.Fprintln(os.Stdout, line)
 			}
 		} else {
 			if downloading {
 				downloading = false
-				fmt.Fprintln(os.Stderr)
+				fmt.Fprintln(os.Stdout)
 			}
-			fmt.Fprintln(os.Stderr, line)
+			fmt.Fprintln(os.Stdout, line)
 		}
 	}
 
