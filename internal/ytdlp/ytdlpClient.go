@@ -2,10 +2,10 @@ package ytdlp
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 
@@ -16,33 +16,28 @@ type DownloadResult struct {
 	DefaultTemplate string `json:"_default_template"`
 }
 
-func GetVideoData(ctx context.Context, url, password string) (*VideoData, error) {
-	cmd := NewYtDlpCommand(url, password)
+type YtDlpClient struct {
+	executor YtDlpExecutor
+	config   *appconfig.Config
+}
+
+func NewYtDlpClient(executor YtDlpExecutor, config *appconfig.Config) *YtDlpClient {
+	return &YtDlpClient{executor: executor, config: config}
+}
+
+func (c *YtDlpClient) GetVideoData(ctx context.Context, url, password string) (*VideoData, error) {
+	cmd := NewYtDlpCommandArgs(url, password)
 	cmd.AddArg("-J")
-	ytDlpCmd := cmd.Execute(ctx)
 
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	ytDlpCmd.Stdout = &out
-	ytDlpCmd.Stderr = &stderr
-	err := ytDlpCmd.Run()
-
-	cmd.ClearPassword()
-
+	output, err := c.executor.Execute(ctx, cmd)
 	if err != nil {
-		if stderr.Len() > 0 {
-			fmt.Fprintln(os.Stderr)
-			fmt.Fprintln(os.Stderr, stderr.String())
-		} else {
-			fmt.Fprintln(os.Stderr)
-			fmt.Fprintln(os.Stderr, "Error running yt-dlp:", err)
-		}
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "Error running yt-dlp:", err)
 		return nil, err
 	}
 
 	var data VideoData
-	err = json.Unmarshal(out.Bytes(), &data)
-	if err != nil {
+	if err := json.Unmarshal(output, &data); err != nil {
 		fmt.Fprintln(os.Stderr, "Error parsing JSON:", err)
 		return nil, err
 	}
@@ -50,33 +45,18 @@ func GetVideoData(ctx context.Context, url, password string) (*VideoData, error)
 	return &data, nil
 }
 
-func DownloadVideo(ctx context.Context, url, password, format string) error {
-	cmd := NewYtDlpCommand(url, password)
-	cfg := appconfig.Get()
-	if cfg.N > 0 {
-		cmd.AddArgWithValue("-N", strconv.Itoa(cfg.N))
+func (c *YtDlpClient) DownloadVideo(ctx context.Context, url, password, format string) error {
+	cmd := NewYtDlpCommandArgs(url, password)
+
+	if c.config.N > 0 {
+		cmd.AddArgWithValue("-N", strconv.Itoa(c.config.N))
 	}
+
 	cmd.AddArg("--newline")
 	cmd.AddArgWithValue("-f", format)
 	cmd.AddArgWithValue("--progress-template", "%(progress)j")
-	ytDlpCmd := cmd.Execute(ctx)
 
-	cmd.ClearPassword()
-
-	stdout, err := ytDlpCmd.StdoutPipe()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error creating StdoutPipe:", err)
-		return err
-	}
-
-	stderr, err := ytDlpCmd.StderrPipe()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error creating StderrPipe:", err)
-		return err
-	}
-
-	err = ytDlpCmd.Start()
-
+	stdout, stderr, err := c.executor.ExecuteWithStreams(ctx, cmd)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error running yt-dlp:", err)
 		return err
@@ -87,7 +67,7 @@ func DownloadVideo(ctx context.Context, url, password, format string) error {
 	stdoutScanner := bufio.NewScanner(stdout)
 	stderrScanner := bufio.NewScanner(stderr)
 
-	go func(done chan struct{}) {
+	go func() {
 		defer close(done)
 		for stderrScanner.Scan() {
 			select {
@@ -97,7 +77,7 @@ func DownloadVideo(ctx context.Context, url, password, format string) error {
 				fmt.Fprintln(os.Stderr, stderrScanner.Text())
 			}
 		}
-	}(done)
+	}()
 
 	for stdoutScanner.Scan() {
 		line := stdoutScanner.Text()
@@ -116,7 +96,7 @@ func DownloadVideo(ctx context.Context, url, password, format string) error {
 		}
 	}
 
-	if err := ytDlpCmd.Wait(); err != nil {
+	if err := waitForPipeClose(stdout); err != nil {
 		fmt.Fprintln(os.Stderr, "Error waiting for command:", err)
 		return err
 	}
@@ -125,5 +105,12 @@ func DownloadVideo(ctx context.Context, url, password, format string) error {
 
 	fmt.Println()
 
-	return err
+	return nil
+}
+
+func waitForPipeClose(r io.Reader) error {
+	if closer, ok := r.(io.Closer); ok {
+		return closer.Close()
+	}
+	return nil
 }

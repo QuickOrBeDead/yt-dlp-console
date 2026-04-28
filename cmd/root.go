@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/QuickOrBeDead/yt-dlp-console/internal/appconfig"
 	"github.com/QuickOrBeDead/yt-dlp-console/internal/ytdlp"
 	"github.com/briandowns/spinner"
 	"github.com/manifoldco/promptui"
@@ -18,13 +19,16 @@ import (
 var version = "dev"
 
 var rootCmd = &cobra.Command{
-	Use:   "yt-dlp-console",
-	Short: "Interactive CLI for downloading videos using yt-dlp",
-	Long:  "An interactive command-line tool for selecting and downloading videos using yt-dlp with format selection.",
+	Use:     "yt-dlp-console",
+	Short:   "Interactive CLI for downloading videos using yt-dlp",
+	Long:    "An interactive command-line tool for selecting and downloading videos using yt-dlp with format selection.",
 	Version: version,
 	Run: func(cmd *cobra.Command, args []string) {
 		var url, password string
 		var af, vf *ytdlp.VideoFormat = nil, nil
+
+		config := appconfig.Get()
+		client := ytdlp.NewYtDlpClient(ytdlp.NewYtdlpExecutor(config), config)
 
 		prompt := promptui.Prompt{
 			Label: "Video Url",
@@ -96,7 +100,7 @@ var rootCmd = &cobra.Command{
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		data, err := ytdlp.GetVideoData(ctx, url, password)
+		data, err := client.GetVideoData(ctx, url, password)
 		s.Stop()
 
 		if err != nil {
@@ -148,7 +152,7 @@ var rootCmd = &cobra.Command{
 			format = fmt.Sprintf("%s+%s", vf.FormatID, af.FormatID)
 		}
 
-		err = ytdlp.DownloadVideo(ctx, url, password, format)
+		err = client.DownloadVideo(ctx, url, password, format)
 		if err != nil {
 			fmt.Println("Error downloading video:", err)
 			return
