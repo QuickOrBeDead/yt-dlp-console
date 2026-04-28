@@ -21,7 +21,7 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X={{.ModuleName}}/cmd.version={{.Version}}
+      - -X=github.com/QuickOrBeDead/yt-dlp-console/cmd.version={{.Version}}
 
 checksum:
   algorithm: sha256
