@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"charm.land/huh/v2"
 	"github.com/QuickOrBeDead/yt-dlp-console/internal/appconfig"
-	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
 
@@ -17,23 +17,15 @@ var configCmd = &cobra.Command{
 		cfg := appconfig.Get()
 		fmt.Printf("Current yt-dlp command: %q\n", cfg.YtDlpCommand)
 
-		p := promptui.Prompt{
-			Label:   "yt-dlp command (blank to keep)",
-			Default: cfg.YtDlpCommand,
-		}
-		val, err := p.Run()
-		if err == promptui.ErrInterrupt {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		cfg.YtDlpCommand = val
+		huh.NewInput().
+			Title("yt-dlp command (blank to keep)").
+			Value(&cfg.YtDlpCommand).
+			Run()
 
-		p = promptui.Prompt{
-			Label:   "Concurrent fragments -N (1..32)",
-			Default: strconv.Itoa(cfg.N),
-			Validate: func(s string) error {
+		nStr := strconv.Itoa(cfg.N)
+		huh.NewInput().
+			Title("Concurrent fragments -N (1..32)").
+			Validate(func(s string) error {
 				if s == "" {
 					return fmt.Errorf("N cannot be empty")
 				}
@@ -42,15 +34,9 @@ var configCmd = &cobra.Command{
 					return fmt.Errorf("enter a number between 1 and 32")
 				}
 				return nil
-			},
-		}
-		nStr, err := p.Run()
-		if err == promptui.ErrInterrupt {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
+			}).
+			Value(&nStr).
+			Run()
 		n, _ := strconv.Atoi(nStr)
 		cfg.N = n
 
