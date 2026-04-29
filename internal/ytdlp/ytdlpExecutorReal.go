@@ -1,6 +1,7 @@
 package ytdlp
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -18,13 +19,18 @@ func NewYtdlpExecutor(config *appconfig.Config) YtdlpExecutorReal {
 	return YtdlpExecutorReal{config: config}
 }
 
-func (r YtdlpExecutorReal) Execute(ctx context.Context, cmd *YtDlpCommandArgs) ([]byte, error) {
-	fmt.Printf("yt-dlp command: %s %s\n", r.config.YtDlpCommand, strings.Join(cmd.BuildArgsMasked(), " "))
+func (r YtdlpExecutorReal) Execute(ctx context.Context, cmd *YtDlpCommandArgs, stdout *bytes.Buffer, stderr *bytes.Buffer) error {
 	execCmd := exec.CommandContext(ctx, r.config.YtDlpCommand, cmd.BuildArgs()...)
+	execCmd.Stdout = stdout
+	execCmd.Stderr = stderr
+
+	fmt.Printf("yt-dlp command: %s %s\n", r.config.YtDlpCommand, strings.Join(cmd.BuildArgsMasked(), " "))
+
+	err := execCmd.Run()
 
 	cmd.ClearPassword()
 
-	return execCmd.Output()
+	return err
 }
 
 func (r YtdlpExecutorReal) ExecuteWithStreams(ctx context.Context, cmd *YtDlpCommandArgs) (io.Reader, io.Reader, error) {

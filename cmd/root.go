@@ -74,8 +74,9 @@ var rootCmd = &cobra.Command{
 		var data *ytdlp.VideoData
 		err = spinner.New().
 			Title("Retrieving available video formats...").
-			Action(func() {
+			ActionWithErr(func(ctx context.Context) error {
 				data, err = client.GetVideoData(ctx, videoUrl, password)
+				return err
 			}).
 			Run()
 		if err != nil {
