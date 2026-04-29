@@ -59,7 +59,7 @@ func TestYtDlpClient_GetVideoData(t *testing.T) {
 			url:        "https://youtube.com/watch?v=test",
 			wantErr:    true,
 			wantStdOut: "",
-			wantStdErr: "\nError running yt-dlp: yt-dlp not found\n",
+			wantStdErr: "Error running yt-dlp: yt-dlp not found\n",
 		},
 	}
 

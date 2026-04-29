@@ -1,6 +1,7 @@
 package ytdlp
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -14,11 +15,14 @@ type YtdlpFakeExecutor struct {
 	StreamsErr        error
 }
 
-func (f *YtdlpFakeExecutor) Execute(ctx context.Context, cmd *YtDlpCommandArgs) ([]byte, error) {
+func (f *YtdlpFakeExecutor) Execute(ctx context.Context, cmd *YtDlpCommandArgs, stdout *bytes.Buffer, stderr *bytes.Buffer) error {
 	if f.ExecuteErr != nil {
-		return nil, f.ExecuteErr
+		return f.ExecuteErr
 	}
-	return json.Marshal(f.VideoDataResponse)
+	if f.VideoDataResponse != nil {
+		json.NewEncoder(stdout).Encode(f.VideoDataResponse)
+	}
+	return nil
 }
 
 func (f *YtdlpFakeExecutor) ExecuteWithStreams(ctx context.Context, cmd *YtDlpCommandArgs) (io.Reader, io.Reader, error) {

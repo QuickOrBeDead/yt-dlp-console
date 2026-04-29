@@ -2,6 +2,7 @@ package ytdlp
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -29,15 +30,22 @@ func (c *YtDlpClient) GetVideoData(ctx context.Context, url, password string) (*
 	cmd := NewYtDlpCommandArgs(url, password)
 	cmd.AddArg("-J")
 
-	output, err := c.executor.Execute(ctx, cmd)
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	err := c.executor.Execute(ctx, cmd, &out, &stderr)
+
 	if err != nil {
-		fmt.Fprintln(os.Stderr)
-		fmt.Fprintln(os.Stderr, "Error running yt-dlp:", err)
+		if stderr.Len() > 0 {
+			fmt.Fprintln(os.Stderr, stderr.String())
+		} else {
+			fmt.Fprintln(os.Stderr, "Error running yt-dlp:", err)
+		}
+
 		return nil, err
 	}
 
 	var data VideoData
-	if err := json.Unmarshal(output, &data); err != nil {
+	if err := json.Unmarshal(out.Bytes(), &data); err != nil {
 		fmt.Fprintln(os.Stderr, "Error parsing JSON:", err)
 		return nil, err
 	}
