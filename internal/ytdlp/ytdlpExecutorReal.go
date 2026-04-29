@@ -5,9 +5,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
 
+	"charm.land/huh/v2/spinner"
 	"github.com/QuickOrBeDead/yt-dlp-console/internal/appconfig"
 )
 
@@ -19,14 +21,20 @@ func NewYtdlpExecutor(config *appconfig.Config) YtdlpExecutorReal {
 	return YtdlpExecutorReal{config: config}
 }
 
-func (r YtdlpExecutorReal) Execute(ctx context.Context, cmd *YtDlpCommandArgs, stdout *bytes.Buffer, stderr *bytes.Buffer) error {
+func (r YtdlpExecutorReal) Execute(ctx context.Context, cmd *YtDlpCommandArgs, cmdDesc string, stdout *bytes.Buffer, stderr *bytes.Buffer) error {
 	execCmd := exec.CommandContext(ctx, r.config.YtDlpCommand, cmd.BuildArgs()...)
 	execCmd.Stdout = stdout
 	execCmd.Stderr = stderr
 
-	fmt.Printf("yt-dlp command: %s %s\n", r.config.YtDlpCommand, strings.Join(cmd.BuildArgsMasked(), " "))
+	fmt.Fprintf(os.Stdout, "yt-dlp command: %s %s\n", r.config.YtDlpCommand, strings.Join(cmd.BuildArgsMasked(), " "))
 
-	err := execCmd.Run()
+	err := spinner.New().
+		Title(cmdDesc).
+		ActionWithErr(func(ctx context.Context) error {
+			err := execCmd.Run()
+			return err
+		}).
+		Run()
 
 	cmd.ClearPassword()
 
@@ -46,7 +54,7 @@ func (r YtdlpExecutorReal) ExecuteWithStreams(ctx context.Context, cmd *YtDlpCom
 		return nil, nil, err
 	}
 
-	fmt.Printf("yt-dlp command: %s %s\n", r.config.YtDlpCommand, strings.Join(cmd.BuildArgsMasked(), " "))
+	fmt.Fprintf(os.Stdout, "yt-dlp command: %s %s\n", r.config.YtDlpCommand, strings.Join(cmd.BuildArgsMasked(), " "))
 
 	err = execCmd.Start()
 

@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"charm.land/huh/v2"
-	"charm.land/huh/v2/spinner"
 	"github.com/QuickOrBeDead/yt-dlp-console/internal/appconfig"
 	"github.com/QuickOrBeDead/yt-dlp-console/internal/ytdlp"
 	"github.com/spf13/cobra"
@@ -71,14 +70,7 @@ var rootCmd = &cobra.Command{
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		var data *ytdlp.VideoData
-		err = spinner.New().
-			Title("Retrieving available video formats...").
-			ActionWithErr(func(ctx context.Context) error {
-				data, err = client.GetVideoData(ctx, videoUrl, password)
-				return err
-			}).
-			Run()
+		data, err := client.GetVideoData(ctx, videoUrl, password)
 		if err != nil {
 			fmt.Println("Error running yt-dlp:", err)
 			return

@@ -32,16 +32,16 @@ func (c *YtDlpClient) GetVideoData(ctx context.Context, url, password string) (*
 
 	var out bytes.Buffer
 	var stderr bytes.Buffer
-	err := c.executor.Execute(ctx, cmd, &out, &stderr)
+	err := c.executor.Execute(ctx, cmd, "Retrieving available video formats...", &out, &stderr)
 
-	if err != nil {
-		if stderr.Len() > 0 {
-			fmt.Fprintln(os.Stderr, stderr.String())
-		} else {
-			fmt.Fprintln(os.Stderr, "Error running yt-dlp:", err)
-		}
-
+  if err != nil {
+		fmt.Fprintln(os.Stderr, "Error running yt-dlp:", err)
 		return nil, err
+	}
+  
+  if stderr.Len() > 0 {
+		fmt.Fprintln(os.Stderr, stderr.String())
+    return nil, err
 	}
 
 	var data VideoData
