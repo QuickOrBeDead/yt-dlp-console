@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	"github.com/QuickOrBeDead/yt-dlp-console/internal/appconfig"
+	"github.com/QuickOrBeDead/yt-dlp-console/internal/console"
 )
 
 type DownloadResult struct {
@@ -35,7 +36,7 @@ func (c *YtDlpClient) GetVideoData(ctx context.Context, url, password string) (*
 	err := c.executor.Execute(ctx, cmd, "Retrieving available video formats...", &out, &stderr)
 
 	if stderr.Len() > 0 {
-		fmt.Fprintln(os.Stderr, stderr.String())
+		console.Error("%s", stderr.String())
 	}
 
 	if err != nil {
@@ -44,7 +45,7 @@ func (c *YtDlpClient) GetVideoData(ctx context.Context, url, password string) (*
 
 	var data VideoData
 	if err := json.Unmarshal(out.Bytes(), &data); err != nil {
-		fmt.Fprintln(os.Stderr, "Error parsing JSON:", err)
+		console.Error("Error parsing JSON: %v", err)
 		return nil, err
 	}
 
@@ -64,7 +65,7 @@ func (c *YtDlpClient) DownloadVideo(ctx context.Context, url, password, format s
 
 	stdout, stderr, err := c.executor.ExecuteWithStreams(ctx, cmd)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error running yt-dlp:", err)
+		console.Error("Error running yt-dlp: %v", err)
 		return err
 	}
 
@@ -80,7 +81,7 @@ func (c *YtDlpClient) DownloadVideo(ctx context.Context, url, password, format s
 			case <-ctx.Done():
 				return
 			default:
-				fmt.Fprintln(os.Stderr, stderrScanner.Text())
+				console.Error("%s", stderrScanner.Text())
 			}
 		}
 	}()
@@ -91,25 +92,25 @@ func (c *YtDlpClient) DownloadVideo(ctx context.Context, url, password, format s
 			var result DownloadResult
 			if err := json.Unmarshal([]byte(line), &result); err == nil {
 				downloading = true
-				fmt.Fprintf(os.Stdout, "\r%s\x1b[K", result.DefaultTemplate)
+				console.SuccessSameLine("\r%s\x1b[K", result.DefaultTemplate)
 			} else {
 				if downloading {
 					downloading = false
 					fmt.Fprintln(os.Stdout)
 				}
-				fmt.Fprintln(os.Stdout, line)
+				console.Info("%s", line)
 			}
 		} else {
 			if downloading {
 				downloading = false
 				fmt.Fprintln(os.Stdout)
 			}
-			fmt.Fprintln(os.Stdout, line)
+			console.Info("%s", line)
 		}
 	}
 
 	if err := waitForPipeClose(stdout); err != nil {
-		fmt.Fprintln(os.Stderr, "Error waiting for command:", err)
+		console.Error("Error waiting for command: %v", err)
 		return err
 	}
 

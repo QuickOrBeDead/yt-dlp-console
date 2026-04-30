@@ -19,6 +19,10 @@ func defaultConfig() *Config {
 	return &Config{YtDlpCommand: "yt-dlp", N: 4}
 }
 
+func ConfigFilePath() (string, error) {
+	return configFilePath()
+}
+
 func configFilePath() (string, error) {
 	dir, err := os.UserConfigDir()
 	if err != nil {

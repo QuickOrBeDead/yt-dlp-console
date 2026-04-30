@@ -10,6 +10,7 @@ import (
 
 	"charm.land/huh/v2"
 	"github.com/QuickOrBeDead/yt-dlp-console/internal/appconfig"
+	"github.com/QuickOrBeDead/yt-dlp-console/internal/console"
 	"github.com/QuickOrBeDead/yt-dlp-console/internal/ytdlp"
 	"github.com/spf13/cobra"
 )
@@ -42,6 +43,7 @@ var rootCmd = &cobra.Command{
 			Value(&videoUrl).
 			Run()
 		if err != nil {
+			console.Error("Error running yt-dlp: %v", err)
 			return
 		}
 
@@ -52,6 +54,7 @@ var rootCmd = &cobra.Command{
 			Value(&auth).
 			Run()
 		if err != nil {
+			console.Error("Error running yt-dlp: %v", err)
 			return
 		}
 
@@ -63,6 +66,7 @@ var rootCmd = &cobra.Command{
 				Value(&password).
 				Run()
 			if err != nil {
+				console.Error("Error running yt-dlp: %v", err)
 				return
 			}
 		}
@@ -72,11 +76,15 @@ var rootCmd = &cobra.Command{
 
 		data, err := client.GetVideoData(ctx, videoUrl, password)
 		if err != nil {
-			fmt.Println("Error running yt-dlp:", err)
+			console.Error("Error running yt-dlp: %v", err)
 			return
 		}
 
 		formats, labels := data.GetVideoList()
+		if len(labels) == 0 {
+			console.Error("No video found")
+			return
+		}
 
 		var videoLabel string
 		err = huh.NewSelect[string]().
@@ -85,6 +93,7 @@ var rootCmd = &cobra.Command{
 			Value(&videoLabel).
 			Run()
 		if err != nil {
+			console.Error("Error running yt-dlp: %v", err)
 			return
 		}
 		videoIdx := indexOf(labels, videoLabel)
@@ -99,6 +108,7 @@ var rootCmd = &cobra.Command{
 				Value(&audioLabel).
 				Run()
 			if err != nil {
+				console.Error("Error running yt-dlp: %v", err)
 				return
 			}
 			audioIdx := indexOf(labels, audioLabel)
@@ -114,10 +124,10 @@ var rootCmd = &cobra.Command{
 
 		err = client.DownloadVideo(ctx, videoUrl, password, format)
 		if err != nil {
-			fmt.Println("Error downloading video:", err)
+			console.Error("Error downloading video: %v", err)
 			return
 		}
-		fmt.Println("Download complete!")
+		console.Success("Download complete!")
 	},
 }
 

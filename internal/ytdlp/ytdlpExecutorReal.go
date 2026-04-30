@@ -3,14 +3,13 @@ package ytdlp
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"strings"
 
 	"charm.land/huh/v2/spinner"
 	"github.com/QuickOrBeDead/yt-dlp-console/internal/appconfig"
+	"github.com/QuickOrBeDead/yt-dlp-console/internal/console"
 )
 
 type YtdlpExecutorReal struct {
@@ -26,7 +25,7 @@ func (r YtdlpExecutorReal) Execute(ctx context.Context, cmd *YtDlpCommandArgs, c
 	execCmd.Stdout = stdout
 	execCmd.Stderr = stderr
 
-	fmt.Fprintf(os.Stdout, "yt-dlp command: %s %s\n", r.config.YtDlpCommand, strings.Join(cmd.BuildArgsMasked(), " "))
+	console.Muted("yt-dlp command: %s %s\n", r.config.YtDlpCommand, strings.Join(cmd.BuildArgsMasked(), " "))
 
 	err := spinner.New().
 		Title(cmdDesc).
@@ -54,7 +53,7 @@ func (r YtdlpExecutorReal) ExecuteWithStreams(ctx context.Context, cmd *YtDlpCom
 		return nil, nil, err
 	}
 
-	fmt.Fprintf(os.Stdout, "yt-dlp command: %s %s\n", r.config.YtDlpCommand, strings.Join(cmd.BuildArgsMasked(), " "))
+	console.Muted("yt-dlp command: %s %s\n", r.config.YtDlpCommand, strings.Join(cmd.BuildArgsMasked(), " "))
 
 	err = execCmd.Start()
 
