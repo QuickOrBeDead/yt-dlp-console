@@ -59,7 +59,7 @@ func TestYtDlpClient_GetVideoData(t *testing.T) {
 			url:        "https://youtube.com/watch?v=test",
 			wantErr:    true,
 			wantStdOut: "",
-			wantStdErr: "Error running yt-dlp: yt-dlp not found\n",
+			wantStdErr: "",
 		},
 	}
 
@@ -128,7 +128,7 @@ func TestYtDlpClient_DownloadVideo(t *testing.T) {
 			url:        "https://youtube.com/watch?v=test",
 			format:     "22",
 			wantErr:    false,
-			wantStdOut: "Preparing for download\n\rDownloading 50%...\x1b[K\n{\"_default_template\": 1}\nWarning\n\rDownloading 99%...\x1b[K\nFinished!\n\n",
+			wantStdOut: "\x1b[1;34mPreparing for download\x1b[m\n\x1b[1;32m\rDownloading 50%...\x1b[K\x1b[m\n\x1b[1;34m{\"_default_template\": 1}\x1b[m\n\x1b[1;34mWarning\x1b[m\n\x1b[1;32m\rDownloading 99%...\x1b[K\x1b[m\n\x1b[1;34mFinished!\x1b[m\n\n",
 			wantStdErr: "",
 		},
 		{
@@ -139,8 +139,8 @@ func TestYtDlpClient_DownloadVideo(t *testing.T) {
 			url:        "https://youtube.com/watch?v=test",
 			format:     "22",
 			wantErr:    true,
-			wantStdOut: "",
-			wantStdErr: "Error running yt-dlp: download failed\n",
+			wantStdOut: "\x1b[1;31mError running yt-dlp: download failed\x1b[m\n",
+			wantStdErr: "",
 		},
 	}
 

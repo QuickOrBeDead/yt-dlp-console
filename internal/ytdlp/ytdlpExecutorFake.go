@@ -15,7 +15,7 @@ type YtdlpFakeExecutor struct {
 	StreamsErr        error
 }
 
-func (f *YtdlpFakeExecutor) Execute(ctx context.Context, cmd *YtDlpCommandArgs, stdout *bytes.Buffer, stderr *bytes.Buffer) error {
+func (f *YtdlpFakeExecutor) Execute(ctx context.Context, cmd *YtDlpCommandArgs, cmdDesc string, stdout *bytes.Buffer, stderr *bytes.Buffer) error {
 	if f.ExecuteErr != nil {
 		return f.ExecuteErr
 	}
