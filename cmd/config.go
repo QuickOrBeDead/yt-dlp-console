@@ -6,6 +6,7 @@ import (
 
 	"charm.land/huh/v2"
 	"github.com/QuickOrBeDead/yt-dlp-console/internal/appconfig"
+	"github.com/QuickOrBeDead/yt-dlp-console/internal/console"
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +16,7 @@ var configCmd = &cobra.Command{
 	Short: "Configure settings",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg := appconfig.Get()
-		fmt.Printf("Current yt-dlp command: %q\n", cfg.YtDlpCommand)
+		console.Muted("Current yt-dlp command: %q\n", cfg.YtDlpCommand)
 
 		huh.NewInput().
 			Title("yt-dlp command (blank to keep)").
@@ -43,11 +44,26 @@ var configCmd = &cobra.Command{
 		if err := appconfig.Save(cfg); err != nil {
 			return err
 		}
-		fmt.Println("Saved.")
+		console.Success("Saved.")
+		return nil
+	},
+}
+
+var configShowCmd = &cobra.Command{
+	Use:   "show",
+	Short: "Show current configuration",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg := appconfig.Get()
+		path, _ := appconfig.ConfigFilePath()
+
+		console.Info("Config file:    %s", path)
+		console.Info("yt-dlp command: %s", cfg.YtDlpCommand)
+		console.Info("Concurrent -N:  %d", cfg.N)
 		return nil
 	},
 }
 
 func init() {
+	configCmd.AddCommand(configShowCmd)
 	rootCmd.AddCommand(configCmd)
 }
