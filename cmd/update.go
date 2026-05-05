@@ -48,7 +48,7 @@ var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Update yt-dlp-console to the latest version",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if version == "dev" {
+		if version == "dev" || version == "(devel)" {
 			console.Error("Update is not available for development builds (version: %s)", version)
 			console.Info("Install yt-dlp-console using: go install github.com/QuickOrBeDead/yt-dlp-console@latest")
 			return nil

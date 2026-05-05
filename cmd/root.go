@@ -18,16 +18,10 @@ import (
 
 var version = "dev"
 
-func init() {
-	if v := getVersionFromBuildInfo(); v != "" {
-		version = v
-	}
-}
-
 func getVersionFromBuildInfo() string {
 	// Try debug.ReadBuildInfo() first
 	if info, ok := debug.ReadBuildInfo(); ok {
-		if info.Main.Version != "" && info.Main.Version != "(devel)" {
+		if info.Main.Version != "" {
 			return info.Main.Version
 		}
 	}
@@ -147,6 +141,14 @@ var rootCmd = &cobra.Command{
 		}
 		console.Success("Download complete!")
 	},
+}
+
+func init() {
+	if v := getVersionFromBuildInfo(); v != "" {
+		version = v
+	}
+
+	rootCmd.Version = version
 }
 
 func Execute() {
