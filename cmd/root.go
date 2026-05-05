@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"runtime/debug"
 	"strings"
 
 	"charm.land/huh/v2"
@@ -16,6 +17,23 @@ import (
 )
 
 var version = "dev"
+
+func init() {
+	if v := getVersionFromBuildInfo(); v != "" {
+		version = v
+	}
+}
+
+func getVersionFromBuildInfo() string {
+	// Try debug.ReadBuildInfo() first
+	if info, ok := debug.ReadBuildInfo(); ok {
+		if info.Main.Version != "" && info.Main.Version != "(devel)" {
+			return info.Main.Version
+		}
+	}
+
+	return ""
+}
 
 var rootCmd = &cobra.Command{
 	Use:     "yt-dlp-console",
