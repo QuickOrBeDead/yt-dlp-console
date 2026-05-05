@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
@@ -14,16 +16,43 @@ import (
 
 func getLatestVersion() (string, error) {
 	cmd := exec.Command("go", "list", "-m", "github.com/QuickOrBeDead/yt-dlp-console@latest")
-	out, err := cmd.Output()
+	out, err := cmd.CombinedOutput()
+
+	console.Info("%s", string(out))
+
+	if err == nil {
+		fields := strings.Fields(string(out))
+		if len(fields) >= 2 {
+			return fields[1], nil
+		}
+	}
+
+	console.Warning("go list command failed:")
+	console.Info("Falling back to GitHub tags...")
+
+	resp, err := http.Get("https://api.github.com/repos/QuickOrBeDead/yt-dlp-console/tags?per_page=1")
 	if err != nil {
 		return "", fmt.Errorf("failed to check latest version: %w", err)
 	}
-	// Output format: "github.com/QuickOrBeDead/yt-dlp-console v0.0.4"
-	fields := strings.Fields(string(out))
-	if len(fields) < 2 {
-		return "", fmt.Errorf("unexpected output from go list")
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("GitHub API returned status: %d", resp.StatusCode)
 	}
-	return fields[1], nil
+
+	var tags []struct {
+		Name string `json:"name"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&tags); err != nil {
+		return "", fmt.Errorf("failed to parse GitHub response: %w", err)
+	}
+
+	if len(tags) == 0 {
+		return "", fmt.Errorf("no tags found in GitHub repository")
+	}
+
+	version := strings.TrimPrefix(tags[0].Name, "v")
+	return version, nil
 }
 
 func isUpdateAvailable(current, latest string) (bool, error) {
