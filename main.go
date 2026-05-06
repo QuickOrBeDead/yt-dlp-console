@@ -1,18 +1,24 @@
 package main
 
 import (
+	"os"
 	"runtime"
 
 	"github.com/QuickOrBeDead/yt-dlp-console/cmd"
-	"github.com/muesli/termenv"
+	"golang.org/x/sys/windows"
 )
 
 func main() {
 	if runtime.GOOS == "windows" {
-		// In the most recent versions, calling ColorProfile()
-		// triggers the Windows internal ANSI initialization.
-		_ = termenv.DefaultOutput().ColorProfile()
+		enableVirtualTerminal()
 	}
 
 	cmd.Execute()
+}
+
+func enableVirtualTerminal() {
+	stdout := windows.Handle(os.Stdout.Fd())
+	var mode uint32
+	windows.GetConsoleMode(stdout, &mode)
+	windows.SetConsoleMode(stdout, mode|windows.ENABLE_VIRTUAL_TERMINAL_PROCESSING)
 }
