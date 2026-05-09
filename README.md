@@ -1,5 +1,10 @@
 # yt-dlp-console
 
+![GitHub release](https://img.shields.io/github/v/release/QuickOrBeDead/yt-dlp-console)
+![Tests](https://img.shields.io/github/actions/workflow/status/QuickOrBeDead/yt-dlp-console/test.yml?label=tests)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/QuickOrBeDead/yt-dlp-console/badges/coverage.json)](https://github.com/QuickOrBeDead/yt-dlp-console/actions/workflows/test.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/QuickOrBeDead/yt-dlp-console)](https://goreportcard.com/report/github.com/QuickOrBeDead/yt-dlp-console)
+
 A user-friendly CLI tool that makes downloading videos with [yt-dlp](https://github.com/yt-dlp/yt-dlp) easy through an interactive terminal interface.
 
 ![Terminal Demo](demo.gif)
