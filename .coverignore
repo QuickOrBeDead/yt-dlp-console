@@ -1,3 +1,4 @@
 ytdlpExecutorReal.go
 enablevirtualterminal_windows.go
 enablevirtualterminal_other.go
+cmd/forms.go
