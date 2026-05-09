@@ -45,6 +45,31 @@ func TestYtDlpCommand_BuildArgs(t *testing.T) {
 			setup:      nil,
 			wantMasked: "--video-password ****** https://youtube.com/watch?v=123",
 		},
+		{
+			name:     "with username and account password",
+			url:      "https://youtube.com/watch?v=123",
+			password: "",
+			setup: func(c *YtDlpCommandArgs) {
+				c.SetAccountAuth("myuser", "mypass")
+			},
+			wantArgs: []string{"--username", "myuser", "--password", "mypass", "https://youtube.com/watch?v=123"},
+		},
+		{
+			name:     "with username, account password, and video password",
+			url:      "https://youtube.com/watch?v=123",
+			password: "videosecret",
+			setup: func(c *YtDlpCommandArgs) {
+				c.SetAccountAuth("myuser", "mypass")
+			},
+			wantArgs: []string{"--username", "myuser", "--password", "mypass", "--video-password", "videosecret", "https://youtube.com/watch?v=123"},
+		},
+		{
+			name:       "masked username and account password",
+			url:        "https://youtube.com/watch?v=123",
+			password:   "",
+			setup:      func(c *YtDlpCommandArgs) { c.SetAccountAuth("myuser", "mypass") },
+			wantMasked: "--username myuser --password ****** https://youtube.com/watch?v=123",
+		},
 	}
 
 	for _, tt := range tests {
