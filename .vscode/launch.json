@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug yt-dlp-console",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}",
+            "args": [],
+            "env": {},
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Debug yt-dlp-console (test package)",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}/internal/ytdlp",
+            "args": [],
+            "env": {},
+            "console": "integratedTerminal"
+        }
+    ]
+}
