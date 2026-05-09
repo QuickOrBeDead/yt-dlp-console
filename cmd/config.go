@@ -18,13 +18,12 @@ var configCmd = &cobra.Command{
 		cfg := appconfig.Get()
 		console.Muted("Current yt-dlp command: %q\n", cfg.YtDlpCommand)
 
-		huh.NewInput().
+		_ = runHuh(huh.NewInput().
 			Title("yt-dlp command (blank to keep)").
-			Value(&cfg.YtDlpCommand).
-			Run()
+			Value(&cfg.YtDlpCommand))
 
 		nStr := strconv.Itoa(cfg.N)
-		huh.NewInput().
+		_ = runHuh(huh.NewInput().
 			Title("Concurrent fragments -N (1..32)").
 			Validate(func(s string) error {
 				if s == "" {
@@ -36,8 +35,7 @@ var configCmd = &cobra.Command{
 				}
 				return nil
 			}).
-			Value(&nStr).
-			Run()
+			Value(&nStr))
 		n, _ := strconv.Atoi(nStr)
 		cfg.N = n
 
