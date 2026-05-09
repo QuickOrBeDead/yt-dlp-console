@@ -35,7 +35,7 @@ var rootCmd = &cobra.Command{
 	Long:    "An interactive command-line tool for selecting and downloading videos using yt-dlp with format selection.",
 	Version: version,
 	Run: func(cmd *cobra.Command, args []string) {
-		var videoUrl, password string
+		var videoUrl, password, username, accountPassword string
 		var af, vf *ytdlp.VideoFormat = nil, nil
 
 		config := appconfig.Get()
@@ -81,12 +81,30 @@ var rootCmd = &cobra.Command{
 				console.Error("Error running yt-dlp: %v", err)
 				return
 			}
+		case "Username + Password":
+			err = huh.NewInput().
+				Title("Username").
+				Value(&username).
+				Run()
+			if err != nil {
+				console.Error("Error running yt-dlp: %v", err)
+				return
+			}
+			err = huh.NewInput().
+				Title("Password").
+				EchoMode(huh.EchoModePassword).
+				Value(&accountPassword).
+				Run()
+			if err != nil {
+				console.Error("Error running yt-dlp: %v", err)
+				return
+			}
 		}
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		data, err := client.GetVideoData(ctx, videoUrl, password)
+		data, err := client.GetVideoData(ctx, videoUrl, password, username, accountPassword)
 		if err != nil {
 			console.Error("Error running yt-dlp: %v", err)
 			return
@@ -112,19 +130,20 @@ var rootCmd = &cobra.Command{
 		vf = &formats[videoIdx]
 		if !vf.HasAudio() {
 			formats, labels = data.GetAudioList()
-
-			var audioLabel string
-			err = huh.NewSelect[string]().
-				Title(fmt.Sprintf("Audio (%s)", data.Title)).
-				Options(huh.NewOptions(labels...)...).
-				Value(&audioLabel).
-				Run()
-			if err != nil {
-				console.Error("Error running yt-dlp: %v", err)
-				return
+			if len(labels) > 0 {
+				var audioLabel string
+				err = huh.NewSelect[string]().
+					Title(fmt.Sprintf("Audio (%s)", data.Title)).
+					Options(huh.NewOptions(labels...)...).
+					Value(&audioLabel).
+					Run()
+				if err != nil {
+					console.Error("Error running yt-dlp: %v", err)
+					return
+				}
+				audioIdx := indexOf(labels, audioLabel)
+				af = &formats[audioIdx]
 			}
-			audioIdx := indexOf(labels, audioLabel)
-			af = &formats[audioIdx]
 		}
 
 		var format string
@@ -134,7 +153,7 @@ var rootCmd = &cobra.Command{
 			format = fmt.Sprintf("%s+%s", vf.FormatID, af.FormatID)
 		}
 
-		err = client.DownloadVideo(ctx, videoUrl, password, format)
+		err = client.DownloadVideo(ctx, videoUrl, password, format, username, accountPassword)
 		if err != nil {
 			console.Error("Error downloading video: %v", err)
 			return

@@ -27,8 +27,11 @@ func NewYtDlpClient(executor YtDlpExecutor, config *appconfig.Config) *YtDlpClie
 	return &YtDlpClient{executor: executor, config: config}
 }
 
-func (c *YtDlpClient) GetVideoData(ctx context.Context, url, password string) (*VideoData, error) {
-	cmd := NewYtDlpCommandArgs(url, password)
+func (c *YtDlpClient) GetVideoData(ctx context.Context, url, videoPassword, username, accountPassword string) (*VideoData, error) {
+	cmd := NewYtDlpCommandArgs(url, videoPassword)
+	if username != "" {
+		cmd.SetAccountAuth(username, accountPassword)
+	}
 	cmd.AddArg("-J")
 
 	var out bytes.Buffer
@@ -52,8 +55,11 @@ func (c *YtDlpClient) GetVideoData(ctx context.Context, url, password string) (*
 	return &data, nil
 }
 
-func (c *YtDlpClient) DownloadVideo(ctx context.Context, url, password, format string) error {
-	cmd := NewYtDlpCommandArgs(url, password)
+func (c *YtDlpClient) DownloadVideo(ctx context.Context, url, videoPassword, format, username, accountPassword string) error {
+	cmd := NewYtDlpCommandArgs(url, videoPassword)
+	if username != "" {
+		cmd.SetAccountAuth(username, accountPassword)
+	}
 
 	if c.config.N > 0 {
 		cmd.AddArgWithValue("-N", strconv.Itoa(c.config.N))
