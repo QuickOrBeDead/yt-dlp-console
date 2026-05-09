@@ -41,7 +41,7 @@ var rootCmd = &cobra.Command{
 		config := appconfig.Get()
 		client := ytdlp.NewYtDlpClient(ytdlp.NewYtdlpExecutor(config), config)
 
-		err := huh.NewInput().
+		err := runHuh(huh.NewInput().
 			Title("Video Url").
 			Validate(func(s string) error {
 				if len(strings.TrimSpace(s)) == 0 {
@@ -52,19 +52,17 @@ var rootCmd = &cobra.Command{
 				}
 				return nil
 			}).
-			Value(&videoUrl).
-			Run()
+			Value(&videoUrl))
 		if err != nil {
 			console.Error("Error running yt-dlp: %v", err)
 			return
 		}
 
 		var auth string
-		err = huh.NewSelect[string]().
+		err = runHuh(huh.NewSelect[string]().
 			Title("Auth").
 			Options(huh.NewOptions("None", "Password", "Username + Password")...).
-			Value(&auth).
-			Run()
+			Value(&auth))
 		if err != nil {
 			console.Error("Error running yt-dlp: %v", err)
 			return
@@ -72,29 +70,26 @@ var rootCmd = &cobra.Command{
 
 		switch auth {
 		case "Password":
-			err = huh.NewInput().
+			err = runHuh(huh.NewInput().
 				Title("Video Password").
 				EchoMode(huh.EchoModePassword).
-				Value(&password).
-				Run()
+				Value(&password))
 			if err != nil {
 				console.Error("Error running yt-dlp: %v", err)
 				return
 			}
 		case "Username + Password":
-			err = huh.NewInput().
+			err = runHuh(huh.NewInput().
 				Title("Username").
-				Value(&username).
-				Run()
+				Value(&username))
 			if err != nil {
 				console.Error("Error running yt-dlp: %v", err)
 				return
 			}
-			err = huh.NewInput().
+			err = runHuh(huh.NewInput().
 				Title("Password").
 				EchoMode(huh.EchoModePassword).
-				Value(&accountPassword).
-				Run()
+				Value(&accountPassword))
 			if err != nil {
 				console.Error("Error running yt-dlp: %v", err)
 				return
@@ -117,11 +112,10 @@ var rootCmd = &cobra.Command{
 		}
 
 		var videoLabel string
-		err = huh.NewSelect[string]().
+		err = runHuh(huh.NewSelect[string]().
 			Title(fmt.Sprintf("Video (%s)", data.Title)).
 			Options(huh.NewOptions(labels...)...).
-			Value(&videoLabel).
-			Run()
+			Value(&videoLabel))
 		if err != nil {
 			console.Error("Error running yt-dlp: %v", err)
 			return
@@ -132,11 +126,10 @@ var rootCmd = &cobra.Command{
 			formats, labels = data.GetAudioList()
 			if len(labels) > 0 {
 				var audioLabel string
-				err = huh.NewSelect[string]().
+				err = runHuh(huh.NewSelect[string]().
 					Title(fmt.Sprintf("Audio (%s)", data.Title)).
 					Options(huh.NewOptions(labels...)...).
-					Value(&audioLabel).
-					Run()
+					Value(&audioLabel))
 				if err != nil {
 					console.Error("Error running yt-dlp: %v", err)
 					return
@@ -180,6 +173,12 @@ func Execute() {
 func isValidURL(rawURL string) bool {
 	parsedURL, err := url.ParseRequestURI(rawURL)
 	return err == nil && parsedURL.Scheme != "" && parsedURL.Host != ""
+}
+
+func runHuh(f interface{ Run() error }) error {
+	err := f.Run()
+	fmt.Print("\r\x1b[K")
+	return err
 }
 
 func indexOf(slice []string, value string) int {
