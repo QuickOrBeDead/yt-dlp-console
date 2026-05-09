@@ -130,19 +130,20 @@ var rootCmd = &cobra.Command{
 		vf = &formats[videoIdx]
 		if !vf.HasAudio() {
 			formats, labels = data.GetAudioList()
-
-			var audioLabel string
-			err = huh.NewSelect[string]().
-				Title(fmt.Sprintf("Audio (%s)", data.Title)).
-				Options(huh.NewOptions(labels...)...).
-				Value(&audioLabel).
-				Run()
-			if err != nil {
-				console.Error("Error running yt-dlp: %v", err)
-				return
+			if len(labels) > 0 {
+				var audioLabel string
+				err = huh.NewSelect[string]().
+					Title(fmt.Sprintf("Audio (%s)", data.Title)).
+					Options(huh.NewOptions(labels...)...).
+					Value(&audioLabel).
+					Run()
+				if err != nil {
+					console.Error("Error running yt-dlp: %v", err)
+					return
+				}
+				audioIdx := indexOf(labels, audioLabel)
+				af = &formats[audioIdx]
 			}
-			audioIdx := indexOf(labels, audioLabel)
-			af = &formats[audioIdx]
 		}
 
 		var format string
