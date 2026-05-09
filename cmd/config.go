@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"charm.land/huh/v2"
 	"github.com/QuickOrBeDead/yt-dlp-console/internal/appconfig"
 	"github.com/QuickOrBeDead/yt-dlp-console/internal/console"
 	"github.com/spf13/cobra"
@@ -18,24 +17,21 @@ var configCmd = &cobra.Command{
 		cfg := appconfig.Get()
 		console.Muted("Current yt-dlp command: %q\n", cfg.YtDlpCommand)
 
-		_ = runHuh(huh.NewInput().
-			Title("yt-dlp command (blank to keep)").
-			Value(&cfg.YtDlpCommand))
+		newCmd, _ := defaultForms.Input("yt-dlp command (blank to keep)", nil)
+		if newCmd != "" {
+			cfg.YtDlpCommand = newCmd
+		}
 
-		nStr := strconv.Itoa(cfg.N)
-		_ = runHuh(huh.NewInput().
-			Title("Concurrent fragments -N (1..32)").
-			Validate(func(s string) error {
-				if s == "" {
-					return fmt.Errorf("N cannot be empty")
-				}
-				n, err := strconv.Atoi(s)
-				if err != nil || n < 1 || n > 32 {
-					return fmt.Errorf("enter a number between 1 and 32")
-				}
-				return nil
-			}).
-			Value(&nStr))
+		nStr, _ := defaultForms.Input("Concurrent fragments -N (1..32)", func(s string) error {
+			if s == "" {
+				return fmt.Errorf("N cannot be empty")
+			}
+			n, err := strconv.Atoi(s)
+			if err != nil || n < 1 || n > 32 {
+				return fmt.Errorf("enter a number between 1 and 32")
+			}
+			return nil
+		})
 		n, _ := strconv.Atoi(nStr)
 		cfg.N = n
 
