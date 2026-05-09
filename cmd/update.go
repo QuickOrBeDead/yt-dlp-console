@@ -103,13 +103,12 @@ var updateCmd = &cobra.Command{
 		}
 
 		var confirm bool
-		huh.NewConfirm().
+		_ = runHuh(huh.NewConfirm().
 			Title(fmt.Sprintf("Update available: %s → %s", version, latest)).
 			Description("Update now?").
 			Affirmative("Yes").
 			Negative("No").
-			Value(&confirm).
-			Run()
+			Value(&confirm))
 
 		if !confirm {
 			console.Info("Update cancelled.")
