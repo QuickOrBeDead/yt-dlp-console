@@ -75,7 +75,7 @@ func TestYtDlpClient_GetVideoData(t *testing.T) {
 			client := NewYtDlpClient(tt.fake, &appconfig.Config{YtDlpCommand: "yt-dlp", N: 5})
 			ctx := context.Background()
 
-			data, err := client.GetVideoData(ctx, tt.url, tt.password)
+			data, err := client.GetVideoData(ctx, tt.url, tt.password, "", "")
 
 			wErr.Close()
 			wOut.Close()
@@ -156,7 +156,7 @@ func TestYtDlpClient_DownloadVideo(t *testing.T) {
 			client := NewYtDlpClient(tt.fake, &appconfig.Config{YtDlpCommand: "yt-dlp", N: 5})
 			ctx := context.Background()
 
-			err := client.DownloadVideo(ctx, tt.url, "", tt.format)
+			err := client.DownloadVideo(ctx, tt.url, "", tt.format, "", "")
 
 			wErr.Close()
 			wOut.Close()
