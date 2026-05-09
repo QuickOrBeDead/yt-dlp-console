@@ -1,0 +1,70 @@
+name: test
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - run: go test -coverprofile=coverage.out ./...
+
+      - name: Filter coverage
+        if: github.ref == 'refs/heads/main' && hashFiles('.coverignore') != ''
+        run: grep -v -f .coverignore coverage.out > coverage_filtered.out
+
+      - name: Extract coverage percentage
+        if: github.ref == 'refs/heads/main'
+        id: coverage
+        run: |
+          if [ -f coverage_filtered.out ]; then
+            PCT=$(go tool cover -func=coverage_filtered.out | tail -n 1 | awk '{print $3}')
+          else
+            PCT=$(go tool cover -func=coverage.out | tail -n 1 | awk '{print $3}')
+          fi
+          echo "percent=${PCT}" >> $GITHUB_OUTPUT
+
+      - name: Generate coverage badge JSON
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p badge
+          PCT=${{ steps.coverage.outputs.percent }}
+          NUM=${PCT%\%}
+          if (( $(echo "$NUM < 20" | bc -l) )); then
+            COLOR=red
+          elif (( $(echo "$NUM < 40" | bc -l) )); then
+            COLOR=orange
+          elif (( $(echo "$NUM < 60" | bc -l) )); then
+            COLOR=yellow
+          elif (( $(echo "$NUM < 80" | bc -l) )); then
+            COLOR=yellowgreen
+          else
+            COLOR=brightgreen
+          fi
+          cat > badge/coverage.json <<- EOF
+          {
+            "schemaVersion": 1,
+            "label": "coverage",
+            "message": "${PCT}",
+            "color": "${COLOR}"
+          }
+          EOF
+
+      - name: Deploy badge to badges branch
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./badge
+          destination_dir: .
+          publish_branch: badges
+          keep_files: false
