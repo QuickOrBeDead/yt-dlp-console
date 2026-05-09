@@ -9,7 +9,6 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"charm.land/huh/v2"
 	"github.com/QuickOrBeDead/yt-dlp-console/internal/appconfig"
 	"github.com/QuickOrBeDead/yt-dlp-console/internal/console"
 	"github.com/QuickOrBeDead/yt-dlp-console/internal/ytdlp"
@@ -18,8 +17,11 @@ import (
 
 var version = "dev"
 
+var newYtdlpExecutor = func(config *appconfig.Config) ytdlp.YtDlpExecutor {
+	return ytdlp.NewYtdlpExecutor(config)
+}
+
 func getVersionFromBuildInfo() string {
-	// Try debug.ReadBuildInfo() first
 	if info, ok := debug.ReadBuildInfo(); ok {
 		if info.Main.Version != "" {
 			return info.Main.Version
@@ -35,124 +37,93 @@ var rootCmd = &cobra.Command{
 	Long:    "An interactive command-line tool for selecting and downloading videos using yt-dlp with format selection.",
 	Version: version,
 	Run: func(cmd *cobra.Command, args []string) {
-		var videoUrl, password, username, accountPassword string
-		var af, vf *ytdlp.VideoFormat = nil, nil
-
 		config := appconfig.Get()
-		client := ytdlp.NewYtDlpClient(ytdlp.NewYtdlpExecutor(config), config)
-
-		err := runHuh(huh.NewInput().
-			Title("Video Url").
-			Validate(func(s string) error {
-				if len(strings.TrimSpace(s)) == 0 {
-					return errors.New("video url is required")
-				}
-				if !isValidURL(s) {
-					return errors.New("video url should be valid")
-				}
-				return nil
-			}).
-			Value(&videoUrl))
-		if err != nil {
-			console.Error("Error running yt-dlp: %v", err)
-			return
-		}
-
-		var auth string
-		err = runHuh(huh.NewSelect[string]().
-			Title("Auth").
-			Options(huh.NewOptions("None", "Password", "Username + Password")...).
-			Value(&auth))
-		if err != nil {
-			console.Error("Error running yt-dlp: %v", err)
-			return
-		}
-
-		switch auth {
-		case "Password":
-			err = runHuh(huh.NewInput().
-				Title("Video Password").
-				EchoMode(huh.EchoModePassword).
-				Value(&password))
-			if err != nil {
-				console.Error("Error running yt-dlp: %v", err)
-				return
-			}
-		case "Username + Password":
-			err = runHuh(huh.NewInput().
-				Title("Username").
-				Value(&username))
-			if err != nil {
-				console.Error("Error running yt-dlp: %v", err)
-				return
-			}
-			err = runHuh(huh.NewInput().
-				Title("Password").
-				EchoMode(huh.EchoModePassword).
-				Value(&accountPassword))
-			if err != nil {
-				console.Error("Error running yt-dlp: %v", err)
-				return
-			}
-		}
+		client := ytdlp.NewYtDlpClient(newYtdlpExecutor(config), config)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		data, err := client.GetVideoData(ctx, videoUrl, password, username, accountPassword)
-		if err != nil {
-			console.Error("Error running yt-dlp: %v", err)
-			return
-		}
-
-		formats, labels := data.GetVideoList()
-		if len(labels) == 0 {
-			console.Error("No video found")
-			return
-		}
-
-		var videoLabel string
-		err = runHuh(huh.NewSelect[string]().
-			Title(fmt.Sprintf("Video (%s)", data.Title)).
-			Options(huh.NewOptions(labels...)...).
-			Value(&videoLabel))
-		if err != nil {
-			console.Error("Error running yt-dlp: %v", err)
-			return
-		}
-		videoIdx := indexOf(labels, videoLabel)
-		vf = &formats[videoIdx]
-		if !vf.HasAudio() {
-			formats, labels = data.GetAudioList()
-			if len(labels) > 0 {
-				var audioLabel string
-				err = runHuh(huh.NewSelect[string]().
-					Title(fmt.Sprintf("Audio (%s)", data.Title)).
-					Options(huh.NewOptions(labels...)...).
-					Value(&audioLabel))
-				if err != nil {
-					console.Error("Error running yt-dlp: %v", err)
-					return
-				}
-				audioIdx := indexOf(labels, audioLabel)
-				af = &formats[audioIdx]
-			}
-		}
-
-		var format string
-		if af == nil {
-			format = vf.FormatID
-		} else {
-			format = fmt.Sprintf("%s+%s", vf.FormatID, af.FormatID)
-		}
-
-		err = client.DownloadVideo(ctx, videoUrl, password, format, username, accountPassword)
-		if err != nil {
-			console.Error("Error downloading video: %v", err)
+		if err := runDownloadFlow(ctx, client, defaultForms); err != nil {
+			console.Error("%v", err)
 			return
 		}
 		console.Success("Download complete!")
 	},
+}
+
+func runDownloadFlow(ctx context.Context, client *ytdlp.YtDlpClient, forms FormProvider) error {
+	videoUrl, err := forms.Input("Video Url", func(s string) error {
+		if len(strings.TrimSpace(s)) == 0 {
+			return errors.New("video url is required")
+		}
+		if !isValidURL(s) {
+			return errors.New("video url should be valid")
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	auth, err := forms.Select("Auth", []string{"None", "Password", "Username + Password"})
+	if err != nil {
+		return err
+	}
+
+	var password, username, accountPassword string
+	switch auth {
+	case "Password":
+		password, err = forms.InputPassword("Video Password")
+		if err != nil {
+			return err
+		}
+	case "Username + Password":
+		username, err = forms.Input("Username", nil)
+		if err != nil {
+			return err
+		}
+		accountPassword, err = forms.InputPassword("Password")
+		if err != nil {
+			return err
+		}
+	}
+
+	data, err := client.GetVideoData(ctx, videoUrl, password, username, accountPassword)
+	if err != nil {
+		return err
+	}
+
+	formats, labels := data.GetVideoList()
+	if len(labels) == 0 {
+		return errors.New("no video found")
+	}
+
+	videoLabel, err := forms.Select(fmt.Sprintf("Video (%s)", data.Title), labels)
+	if err != nil {
+		return err
+	}
+	videoIdx := indexOf(labels, videoLabel)
+	vf := formats[videoIdx]
+
+	var af *ytdlp.VideoFormat
+	if !vf.HasAudio() {
+		formats, labels = data.GetAudioList()
+		if len(labels) > 0 {
+			audioLabel, err := forms.Select(fmt.Sprintf("Audio (%s)", data.Title), labels)
+			if err != nil {
+				return err
+			}
+			audioIdx := indexOf(labels, audioLabel)
+			af = &formats[audioIdx]
+		}
+	}
+
+	formatStr := vf.FormatID
+	if af != nil {
+		formatStr = fmt.Sprintf("%s+%s", vf.FormatID, af.FormatID)
+	}
+
+	return client.DownloadVideo(ctx, videoUrl, password, formatStr, username, accountPassword)
 }
 
 func init() {
@@ -173,12 +144,6 @@ func Execute() {
 func isValidURL(rawURL string) bool {
 	parsedURL, err := url.ParseRequestURI(rawURL)
 	return err == nil && parsedURL.Scheme != "" && parsedURL.Host != ""
-}
-
-func runHuh(f interface{ Run() error }) error {
-	err := f.Run()
-	fmt.Print("\r\x1b[K")
-	return err
 }
 
 func indexOf(slice []string, value string) int {

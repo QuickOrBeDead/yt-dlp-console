@@ -2,6 +2,8 @@
 
 A user-friendly CLI tool that makes downloading videos with [yt-dlp](https://github.com/yt-dlp/yt-dlp) easy through an interactive terminal interface.
 
+![Terminal Demo](demo.gif)
+
 ## Why this tool?
 
 yt-dlp is powerful but requires remembering complex command-line options. This interactive tool guides you through the download process step-by-step in your terminal—no flags or format codes needed.

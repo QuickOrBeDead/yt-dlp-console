@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"charm.land/huh/v2"
 	"github.com/Masterminds/semver/v3"
 	"github.com/QuickOrBeDead/yt-dlp-console/internal/console"
 	"github.com/spf13/cobra"
@@ -102,13 +101,10 @@ var updateCmd = &cobra.Command{
 			return nil
 		}
 
-		var confirm bool
-		_ = runHuh(huh.NewConfirm().
-			Title(fmt.Sprintf("Update available: %s → %s", version, latest)).
-			Description("Update now?").
-			Affirmative("Yes").
-			Negative("No").
-			Value(&confirm))
+		confirm, err := defaultForms.Confirm(fmt.Sprintf("Update available: %s → %s", version, latest), "Update now?")
+		if err != nil {
+			return err
+		}
 
 		if !confirm {
 			console.Info("Update cancelled.")
